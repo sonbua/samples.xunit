@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -29,7 +30,7 @@ namespace XunitExtensions
                                 bool includeSourceInformation,
                                 IMessageBus messageBus)
         {
-            var observationAttribute = testMethod.Method.GetCustomAttributes(typeof(ObservationAttribute)).FirstOrDefault();
+            var observationAttribute = testMethod.Method.GetCustomAttributes(typeof(FactAttribute)).FirstOrDefault();
             if (observationAttribute == null)
                 return true;
 
