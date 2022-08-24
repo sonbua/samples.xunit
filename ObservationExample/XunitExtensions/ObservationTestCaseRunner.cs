@@ -21,12 +21,11 @@ namespace XunitExtensions
 
         protected override Task<RunSummary> RunTestAsync()
         {
-            var timer = new ExecutionTimer();
-            var TestClass = TestCase.TestMethod.TestClass.Class.ToRuntimeType();
-            var TestMethod = TestCase.TestMethod.Method.ToRuntimeMethod();
+            var testClass = TestCase.TestMethod.TestClass.Class.ToRuntimeType();
+            var testMethod = TestCase.TestMethod.Method.ToRuntimeMethod();
             var test = new XunitTest(TestCase, displayName);
 
-            return new ObservationTestRunner(test, MessageBus, TestClass, TestMethod, Aggregator, CancellationTokenSource).RunAsync();
+            return new ObservationTestRunner(test, MessageBus, testClass, testMethod, Aggregator, CancellationTokenSource).RunAsync();
         }
     }
 }
