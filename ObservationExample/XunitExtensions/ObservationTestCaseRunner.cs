@@ -24,9 +24,9 @@ namespace XunitExtensions
             var timer = new ExecutionTimer();
             var TestClass = TestCase.TestMethod.TestClass.Class.ToRuntimeType();
             var TestMethod = TestCase.TestMethod.Method.ToRuntimeMethod();
-            var test = new ObservationTest(TestCase, displayName);
+            var test = new XunitTest(TestCase, displayName);
 
-            return new ObservationTestRunner(test, MessageBus, timer, TestClass, TestMethod, Aggregator, CancellationTokenSource).RunAsync();
+            return new ObservationTestRunner(test, MessageBus, TestClass, TestMethod, Aggregator, CancellationTokenSource).RunAsync();
         }
     }
 }

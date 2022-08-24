@@ -1,7 +1,12 @@
 ﻿using System;
+using Xunit;
+using Xunit.Sdk;
 
 namespace XunitExtensions
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class ObservationAttribute : Attribute { }
+    [XunitTestCaseDiscoverer("XunitExtensions.ObservationTestCaseDiscoverer", "ObservationExample")]
+    public class ObservationAttribute : FactAttribute
+    {
+    }
 }

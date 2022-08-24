@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -23,7 +22,7 @@ namespace XunitExtensions
         {
         }
 
-        public new Task<decimal> RunAsync()
+        public Task<decimal> RunCustomAsync()
         {
             return Aggregator.RunAsync(async () =>
             {
@@ -36,6 +35,8 @@ namespace XunitExtensions
                             await asyncLifetime2.InitializeAsync();
                         if (!CancellationTokenSource.IsCancellationRequested)
                         {
+                            // customized from xunit
+                            // https://github.com/xunit/xunit/blob/main/src/xunit.v3.core/Sdk/v3/Runners/XunitTestInvoker.cs
                             await BeforeTestMethodInvokedAsync(testClassInstance);
                             if (!CancellationTokenSource.IsCancellationRequested && !Aggregator.HasExceptions)
                             {
@@ -80,22 +81,4 @@ namespace XunitExtensions
             return base.AfterTestMethodInvokedAsync();
         }
     }
-    public abstract class ObservationBeforeAfterTestAttribute : Attribute
-    {
-        /// <summary>
-        /// This method is called before the test method is executed.
-        /// </summary>
-        /// <param name="methodUnderTest">The method under test</param>
-        public virtual void Before(MethodInfo methodUnderTest, object testClassInstance)
-        {
-        }
-    }
-    
-    public class PrivateFieldAttribute : ObservationBeforeAfterTestAttribute
-    {
-        public override void Before(MethodInfo methodUnderTest, object testClassInstance)
-        {
-            Debug.WriteLine("private field..................");
-        }
-    }    
 }

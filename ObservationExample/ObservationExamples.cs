@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using Xunit;
 using XunitExtensions;
 
@@ -13,7 +15,7 @@ public class When_you_have_a_new_stack
         stack = new Stack<string>();
     }
 
-    [Fact]
+    [Observation]
     [PrivateField]
     public void should_be_empty()
     {
@@ -32,6 +34,14 @@ public class When_you_have_a_new_stack
         Assert.Throws<InvalidOperationException>(() => { string unused = stack.Peek; });
     }
 }
+
+public class PrivateFieldAttribute : ObservationBeforeAfterTestAttribute
+{
+    public override void Before(MethodInfo methodUnderTest, object testClassInstance)
+    {
+        Debug.WriteLine("private field..................");
+    }
+}    
 
 // public class When_you_push_an_item_onto_the_stack
 // {
