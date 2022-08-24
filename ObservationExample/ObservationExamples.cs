@@ -39,7 +39,12 @@ public class PrivateFieldAttribute : ObservationBeforeAfterTestAttribute
 {
     public override void Before(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("private field..................");
+        Debug.WriteLine("Entering test method");
+    }
+
+    public override void After(MethodInfo methodUnderTest, object testClassInstance)
+    {
+        Debug.WriteLine("Exiting test method");
     }
 }    
 

@@ -11,6 +11,8 @@ namespace XunitExtensions
 {
     public class ObservationTestInvoker : TestInvoker<ObservationTestCase>
     {
+        private readonly System.Collections.Generic.Stack<ObservationBeforeAfterTestAttribute> _beforeAfterAttributesRun;
+
         public ObservationTestInvoker(
             ITest test,
             IMessageBus messageBus,
@@ -20,6 +22,7 @@ namespace XunitExtensions
             CancellationTokenSource cancellationTokenSource)
             : base(test, messageBus, testClass, null, testMethod, null, aggregator, cancellationTokenSource)
         {
+            _beforeAfterAttributesRun = new System.Collections.Generic.Stack<ObservationBeforeAfterTestAttribute>();
         }
 
         public Task<decimal> RunCustomAsync()
@@ -68,9 +71,37 @@ namespace XunitExtensions
                     .Select(x => x.Attribute)
                     .Cast<ObservationBeforeAfterTestAttribute>();
 
-            foreach (var attribute in attributes)
+            foreach (var beforeTestAttribute in attributes)
             {
-                attribute.Before(TestMethod, testClassInstance);
+                var name = beforeTestAttribute.GetType().Name;
+                
+                if (!MessageBus.QueueMessage(new BeforeTestStarting(Test, name)))
+                {
+                    CancellationTokenSource.Cancel();
+                }
+                else
+                {
+                    try
+                    {
+                        Timer.Aggregate(() => beforeTestAttribute.Before(TestMethod, testClassInstance));
+                        _beforeAfterAttributesRun.Push(beforeTestAttribute);
+                    }
+                    catch (Exception ex)
+                    {
+                        Aggregator.Add(ex);
+                        break;
+                    }
+                    finally
+                    {
+                        if (!MessageBus.QueueMessage(new BeforeTestFinished(Test, name)))
+                            CancellationTokenSource.Cancel();
+                    }
+                }
+                
+                if (CancellationTokenSource.IsCancellationRequested)
+                {
+                    break;
+                }
             }
 
             return base.BeforeTestMethodInvokedAsync();
@@ -78,6 +109,23 @@ namespace XunitExtensions
 
         protected virtual Task AfterTestMethodInvokedAsync(object testClassInstance)
         {
+            foreach (var afterTestAttribute in _beforeAfterAttributesRun)
+            {
+                string name = afterTestAttribute.GetType().Name;
+                
+                if (!MessageBus.QueueMessage(new AfterTestStarting(Test, name)))
+                {
+                    CancellationTokenSource.Cancel();
+                }
+
+                Aggregator.Run(() => Timer.Aggregate(() => afterTestAttribute.After(TestMethod, testClassInstance)));
+                
+                if (!MessageBus.QueueMessage(new AfterTestFinished(Test, name)))
+                {
+                    CancellationTokenSource.Cancel();
+                }
+            }
+            
             return base.AfterTestMethodInvokedAsync();
         }
     }
