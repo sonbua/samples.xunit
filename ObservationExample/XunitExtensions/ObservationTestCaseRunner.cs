@@ -7,17 +7,15 @@ namespace XunitExtensions
     public class ObservationTestCaseRunner : TestCaseRunner<ObservationTestCase>
     {
         readonly string displayName;
-        readonly Specification specification;
 
-        public ObservationTestCaseRunner(Specification specification,
-                                         ObservationTestCase testCase,
-                                         string displayName,
-                                         IMessageBus messageBus,
-                                         ExceptionAggregator aggregator,
-                                         CancellationTokenSource cancellationTokenSource)
+        public ObservationTestCaseRunner(
+            ObservationTestCase testCase,
+            string displayName,
+            IMessageBus messageBus,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource)
             : base(testCase, messageBus, aggregator, cancellationTokenSource)
         {
-            this.specification = specification;
             this.displayName = displayName;
         }
 
@@ -28,7 +26,7 @@ namespace XunitExtensions
             var TestMethod = TestCase.TestMethod.Method.ToRuntimeMethod();
             var test = new ObservationTest(TestCase, displayName);
 
-            return new ObservationTestRunner(specification, test, MessageBus, timer, TestClass, TestMethod, Aggregator, CancellationTokenSource).RunAsync();
+            return new ObservationTestRunner(test, MessageBus, timer, TestClass, TestMethod, Aggregator, CancellationTokenSource).RunAsync();
         }
     }
 }

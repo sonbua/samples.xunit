@@ -23,12 +23,12 @@ namespace XunitExtensions
             DisplayName = String.Format("{0}, it {1}", TestMethod.TestClass.Class.Name, TestMethod.Method.Name).Replace('_', ' ');
         }
 
-        public Task<RunSummary> RunAsync(Specification specification,
-                                         IMessageBus messageBus,
-                                         ExceptionAggregator aggregator,
-                                         CancellationTokenSource cancellationTokenSource)
+        public Task<RunSummary> RunAsync(
+            IMessageBus messageBus,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource)
         {
-            return new ObservationTestCaseRunner(specification, this, DisplayName, messageBus, aggregator, cancellationTokenSource).RunAsync();
+            return new ObservationTestCaseRunner(this, DisplayName, messageBus, aggregator, cancellationTokenSource).RunAsync();
         }
     }
 }

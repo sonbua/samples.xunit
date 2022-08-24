@@ -12,18 +12,15 @@ namespace XunitExtensions
 {
     public class ObservationTestInvoker : TestInvoker<ObservationTestCase>
     {
-        private readonly Specification specification;
-
-        public ObservationTestInvoker(Specification specification,
-                                      ITest test,
-                                      IMessageBus messageBus,
-                                      Type testClass,
-                                      MethodInfo testMethod,
-                                      ExceptionAggregator aggregator,
-                                      CancellationTokenSource cancellationTokenSource)
+        public ObservationTestInvoker(
+            ITest test,
+            IMessageBus messageBus,
+            Type testClass,
+            MethodInfo testMethod,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource)
             : base(test, messageBus, testClass, null, testMethod, null, aggregator, cancellationTokenSource)
         {
-            this.specification = specification;
         }
 
         public new Task<decimal> RunAsync()
@@ -32,47 +29,34 @@ namespace XunitExtensions
             {
                 if (!CancellationTokenSource.IsCancellationRequested)
                 {
+                    var testClassInstance = CreateTestClass();
                     try
                     {
-                        if (specification is IAsyncLifetime asyncLifetime2)
+                        if (testClassInstance is IAsyncLifetime asyncLifetime2)
                             await asyncLifetime2.InitializeAsync();
                         if (!CancellationTokenSource.IsCancellationRequested)
                         {
-                            await BeforeTestMethodInvokedAsync(specification);
+                            await BeforeTestMethodInvokedAsync(testClassInstance);
                             if (!CancellationTokenSource.IsCancellationRequested && !Aggregator.HasExceptions)
                             {
-                                await InvokeTestMethodAsync(specification);
+                                await InvokeTestMethodAsync(testClassInstance);
                             }
 
-                            await AfterTestMethodInvokedAsync(specification);
+                            await AfterTestMethodInvokedAsync(testClassInstance);
                         }
 
-                        if (specification is IAsyncLifetime asyncLifetime3)
+                        if (testClassInstance is IAsyncLifetime asyncLifetime3)
                             await Aggregator.RunAsync(asyncLifetime3.DisposeAsync);
                     }
                     finally
                     {
                         Aggregator.Run(() =>
-                            Test.DisposeTestClass(specification, MessageBus, Timer, CancellationTokenSource));
+                            Test.DisposeTestClass(testClassInstance, MessageBus, Timer, CancellationTokenSource));
                     }
                 }
 
                 return Timer.Total;
             });
-            
-            // return Aggregator.RunAsync(async () =>
-            // {
-            //     if (!CancellationTokenSource.IsCancellationRequested)
-            //     {
-            //         if (!CancellationTokenSource.IsCancellationRequested)
-            //         {
-            //             if (!Aggregator.HasExceptions)
-            //                 await Timer.AggregateAsync(() => InvokeTestMethodAsync(specification));
-            //         }
-            //     }
-            //
-            //     return Timer.Total;
-            // });
         }
 
         protected virtual Task BeforeTestMethodInvokedAsync(object testClassInstance)

@@ -8,24 +8,21 @@ namespace XunitExtensions
 {
     public class ObservationTestMethodRunner : TestMethodRunner<ObservationTestCase>
     {
-        readonly Specification specification;
-
-        public ObservationTestMethodRunner(Specification specification,
-                                           ITestMethod testMethod,
-                                           IReflectionTypeInfo @class,
-                                           IReflectionMethodInfo method,
-                                           IEnumerable<ObservationTestCase> testCases,
-                                           IMessageBus messageBus,
-                                           ExceptionAggregator aggregator,
-                                           CancellationTokenSource cancellationTokenSource)
+        public ObservationTestMethodRunner(
+            ITestMethod testMethod,
+            IReflectionTypeInfo @class,
+            IReflectionMethodInfo method,
+            IEnumerable<ObservationTestCase> testCases,
+            IMessageBus messageBus,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource)
             : base(testMethod, @class, method, testCases, messageBus, aggregator, cancellationTokenSource)
         {
-            this.specification = specification;
         }
 
         protected override Task<RunSummary> RunTestCaseAsync(ObservationTestCase testCase)
         {
-            return testCase.RunAsync(specification, MessageBus, new ExceptionAggregator(Aggregator), CancellationTokenSource);
+            return testCase.RunAsync(MessageBus, new ExceptionAggregator(Aggregator), CancellationTokenSource);
         }
     }
 }
