@@ -1,27 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using Xunit;
-using Xunit.Sdk;
+using Xunit.Abstractions;
 using XunitExtensions;
 
 [assembly: TestFramework("XunitExtensions.ObservationTestFramework", "ObservationExample")]
 
-public class When_you_have_a_new_stack : IClassFixture<SomeData>
+[CollectionDefinition(Name)]
+[TestCollectionDecorator]
+public class StackCollection : ICollectionFixture<SomeData>
+{
+    public const string Name = "Stack test collection";
+}
+
+[Collection(StackCollection.Name)]
+[TestClassDecorator]
+public class When_you_have_a_new_stack
 {
     private readonly SomeData _data;
+    private readonly ITestOutputHelper _testOutputHelper;
     Stack<string> stack;
 
-    public When_you_have_a_new_stack(SomeData data)
+    public When_you_have_a_new_stack(SomeData data, ITestOutputHelper testOutputHelper)
     {
         _data = data;
+        _testOutputHelper = testOutputHelper;
         stack = new Stack<string>();
     }
 
     [Observation]
-    [FirstDecorator]
-    [SecondDecorator]
+    [TestMethodDecorator]
     public void should_be_empty()
     {
         Assert.True(stack.IsEmpty);
@@ -50,29 +59,57 @@ public class SomeData
     public List<int> Data { get; }
 }
 
-public class FirstDecorator : ObservationBeforeAfterTestAttribute
+public class TestCollectionDecorator : ObservationBeforeAfterTestAttribute
 {
+    private ITestOutputHelper _testOutputHelper;
+
     public override void Before(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Entering first decorator");
+        _testOutputHelper = (ITestOutputHelper)testClassInstance.GetType()
+            .GetField("_testOutputHelper", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testClassInstance);
+
+        _testOutputHelper.WriteLine("Entering collection decorator");
     }
 
     public override void After(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Exiting first decorator");
+        _testOutputHelper.WriteLine("Exiting collection decorator");
     }
 }
 
-public class SecondDecorator : BeforeAfterTestAttribute
+public class TestClassDecorator : ObservationBeforeAfterTestAttribute
 {
-    public override void Before(MethodInfo methodUnderTest)
+    private ITestOutputHelper _testOutputHelper;
+
+    public override void Before(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Entering second decorator");
+        _testOutputHelper = (ITestOutputHelper)testClassInstance.GetType()
+            .GetField("_testOutputHelper", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testClassInstance);
+
+        _testOutputHelper.WriteLine("Entering class decorator");
     }
 
-    public override void After(MethodInfo methodUnderTest)
+    public override void After(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Exiting second decorator");
+        _testOutputHelper.WriteLine("Exiting class decorator");
+    }
+}
+
+public class TestMethodDecorator : ObservationBeforeAfterTestAttribute
+{
+    private ITestOutputHelper _testOutputHelper;
+
+    public override void Before(MethodInfo methodUnderTest, object testClassInstance)
+    {
+        _testOutputHelper = (ITestOutputHelper)testClassInstance.GetType()
+            .GetField("_testOutputHelper", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testClassInstance);
+
+        _testOutputHelper.WriteLine("Entering method decorator");
+    }
+
+    public override void After(MethodInfo methodUnderTest, object testClassInstance)
+    {
+        _testOutputHelper.WriteLine("Exiting method decorator");
     }
 }
 
