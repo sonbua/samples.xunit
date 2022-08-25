@@ -1,22 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Xunit;
+using Xunit.Sdk;
 using XunitExtensions;
 
 [assembly: TestFramework("XunitExtensions.ObservationTestFramework", "ObservationExample")]
 
-public class When_you_have_a_new_stack
+public class When_you_have_a_new_stack : IClassFixture<SomeData>
 {
+    private readonly SomeData _data;
     Stack<string> stack;
 
-    public When_you_have_a_new_stack()
+    public When_you_have_a_new_stack(SomeData data)
     {
+        _data = data;
         stack = new Stack<string>();
     }
 
     [Observation]
-    [PrivateField]
+    [FirstDecorator]
+    [SecondDecorator]
     public void should_be_empty()
     {
         Assert.True(stack.IsEmpty);
@@ -35,18 +40,41 @@ public class When_you_have_a_new_stack
     }
 }
 
-public class PrivateFieldAttribute : ObservationBeforeAfterTestAttribute
+public class SomeData
+{
+    public SomeData()
+    {
+        Data = new List<int> { 1, 2, 3 };
+    }
+
+    public List<int> Data { get; }
+}
+
+public class FirstDecorator : ObservationBeforeAfterTestAttribute
 {
     public override void Before(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Entering test method");
+        Debug.WriteLine("Entering first decorator");
     }
 
     public override void After(MethodInfo methodUnderTest, object testClassInstance)
     {
-        Debug.WriteLine("Exiting test method");
+        Debug.WriteLine("Exiting first decorator");
     }
-}    
+}
+
+public class SecondDecorator : BeforeAfterTestAttribute
+{
+    public override void Before(MethodInfo methodUnderTest)
+    {
+        Debug.WriteLine("Entering second decorator");
+    }
+
+    public override void After(MethodInfo methodUnderTest)
+    {
+        Debug.WriteLine("Exiting second decorator");
+    }
+}
 
 // public class When_you_push_an_item_onto_the_stack
 // {

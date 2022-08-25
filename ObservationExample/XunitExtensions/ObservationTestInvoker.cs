@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -11,18 +13,23 @@ namespace XunitExtensions
 {
     public class ObservationTestInvoker : TestInvoker<ObservationTestCase>
     {
-        private readonly System.Collections.Generic.Stack<ObservationBeforeAfterTestAttribute> _beforeAfterAttributesRun;
+        private readonly IReadOnlyList<Attribute> _beforeAfterAttributes;
+        private readonly System.Collections.Generic.Stack<Attribute> _beforeAfterAttributesRun;
 
         public ObservationTestInvoker(
             ITest test,
             IMessageBus messageBus,
             Type testClass,
+            object[] constructorArguments,
             MethodInfo testMethod,
+            object[] testMethodArguments,
+            IReadOnlyList<Attribute> beforeAfterAttributes,
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource)
-            : base(test, messageBus, testClass, null, testMethod, null, aggregator, cancellationTokenSource)
+            : base(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, aggregator, cancellationTokenSource)
         {
-            _beforeAfterAttributesRun = new System.Collections.Generic.Stack<ObservationBeforeAfterTestAttribute>();
+            _beforeAfterAttributes = beforeAfterAttributes;
+            _beforeAfterAttributesRun = new System.Collections.Generic.Stack<Attribute>();
         }
 
         public Task<decimal> RunCustomAsync()
@@ -65,13 +72,7 @@ namespace XunitExtensions
 
         protected virtual Task BeforeTestMethodInvokedAsync(object testClassInstance)
         {
-            var attributes =
-                TestCase.TestMethod.Method.GetCustomAttributes(typeof(ObservationBeforeAfterTestAttribute))
-                    .Cast<ReflectionAttributeInfo>()
-                    .Select(x => x.Attribute)
-                    .Cast<ObservationBeforeAfterTestAttribute>();
-
-            foreach (var beforeTestAttribute in attributes)
+            foreach (var beforeTestAttribute in _beforeAfterAttributes)
             {
                 var name = beforeTestAttribute.GetType().Name;
                 
@@ -83,7 +84,11 @@ namespace XunitExtensions
                 {
                     try
                     {
-                        Timer.Aggregate(() => beforeTestAttribute.Before(TestMethod, testClassInstance));
+                        var action = beforeTestAttribute is ObservationBeforeAfterTestAttribute
+                            ? () => ((ObservationBeforeAfterTestAttribute)beforeTestAttribute).Before(TestMethod, testClassInstance)
+                            : (Action)(() => ((BeforeAfterTestAttribute)beforeTestAttribute).Before(TestMethod));
+
+                        Timer.Aggregate(action);
                         _beforeAfterAttributesRun.Push(beforeTestAttribute);
                     }
                     catch (Exception ex)
@@ -118,7 +123,10 @@ namespace XunitExtensions
                     CancellationTokenSource.Cancel();
                 }
 
-                Aggregator.Run(() => Timer.Aggregate(() => afterTestAttribute.After(TestMethod, testClassInstance)));
+                var action = afterTestAttribute is ObservationBeforeAfterTestAttribute
+                    ? () => ((ObservationBeforeAfterTestAttribute)afterTestAttribute).After(TestMethod, testClassInstance)
+                    : (Action)(() => ((BeforeAfterTestAttribute)afterTestAttribute).After(TestMethod));
+                Aggregator.Run(() => Timer.Aggregate(action));
                 
                 if (!MessageBus.QueueMessage(new AfterTestFinished(Test, name)))
                 {

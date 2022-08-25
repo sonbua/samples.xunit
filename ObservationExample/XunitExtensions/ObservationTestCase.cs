@@ -27,7 +27,7 @@ namespace XunitExtensions
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource)
         {
-            return new ObservationTestCaseRunner(this, DisplayName, messageBus, aggregator, cancellationTokenSource).RunAsync();
+            return new ObservationTestCaseRunner(this, DisplayName, SkipReason, constructorArguments, TestMethodArguments, messageBus, aggregator, cancellationTokenSource).RunAsync();
         }
     }
 }
